@@ -418,38 +418,42 @@
     pointer-events: none;
   }
 
-  /* ── Sidebar collapsible with proper positioning ── */
+  /* ── Sidebar ── */
   .sidebar {
     transition: width 0.25s ease, min-width 0.25s ease;
     flex-shrink: 0;
     position: relative;
   }
   .sidebar.collapsed {
-    width: 0;
-    min-width: 0;
+    width: 0 !important;
+    min-width: 0 !important;
     overflow: hidden;
   }
+
+  /* ── Toggle button — always visible at left edge of map ── */
   .sidebar-toggle {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    right: -18px;
+    left: 0;
     z-index: 500;
     background: #003087;
     color: #fff;
     border: none;
     border-radius: 0 6px 6px 0;
-    width: 18px;
-    height: 48px;
+    width: 20px;
+    height: 52px;
     cursor: pointer;
-    font-size: 10px;
+    font-size: 11px;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 2px 0 6px rgba(0,0,0,0.18);
+    box-shadow: 2px 0 8px rgba(0,0,0,0.25);
     padding: 0;
+    transition: background 0.15s;
   }
   .sidebar-toggle:hover { background: #0a47b8; }
+
   .map-wrap {
     position: relative;
     flex: 1;
@@ -457,9 +461,51 @@
   }
   #map { width: 100%; height: 100%; }
 
-  /* Responsive */
-  @media (max-width: 700px) {
-    .sidebar { width: 240px; min-width: 240px; }
+  /* ── Mobile overlay backdrop ── */
+  .sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 9;
+  }
+  .sidebar-backdrop.visible { display: block; }
+
+  /* ── Mobile styles ── */
+  @media (max-width: 768px) {
+    .sidebar {
+      position: fixed !important;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 280px !important;
+      min-width: 280px !important;
+      z-index: 10;
+      transform: translateX(0);
+      transition: transform 0.25s ease;
+      box-shadow: 4px 0 20px rgba(0,0,0,0.3);
+    }
+    .sidebar.collapsed {
+      transform: translateX(-100%) !important;
+      width: 280px !important;
+      min-width: 280px !important;
+      overflow: hidden;
+    }
+    .sidebar-toggle {
+      top: 50%;
+      left: 0;
+      position: fixed;
+      z-index: 11;
+      width: 24px;
+      height: 56px;
+      font-size: 12px;
+    }
+    .sidebar:not(.collapsed) ~ .map-wrap .sidebar-toggle {
+      left: 280px;
+    }
+    .header-badge { display: none; }
+    .header-text h1 { font-size: 15px; }
+    .header-text p { font-size: 10.5px; }
   }
 
   /* ── Feedback button ── */
@@ -764,6 +810,7 @@
     </div><!-- /sidebar-filters -->
   </div><!-- /sidebar -->
 
+  <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
   <div class="map-wrap">
     <button class="sidebar-toggle" id="sidebarToggle" title="Toggle filters">&#x276E;</button>
     <div id="map"></div>
@@ -1166,14 +1213,46 @@ document.getElementById('headerLogo').src = CBS_DATA;
 
 // ── Sidebar collapse ──
 (function() {
-  const sidebar = document.querySelector('.sidebar');
-  const btn     = document.getElementById('sidebarToggle');
-  btn.addEventListener('click', function() {
+  const sidebar   = document.querySelector('.sidebar');
+  const btn       = document.getElementById('sidebarToggle');
+  const backdrop  = document.getElementById('sidebarBackdrop');
+  const isMobile  = () => window.innerWidth <= 768;
+
+  // Start collapsed on mobile
+  if (isMobile()) {
+    sidebar.classList.add('collapsed');
+    btn.innerHTML = '&#x276F;';
+    btn.style.left = '0';
+  }
+
+  function toggleSidebar() {
     const collapsed = sidebar.classList.toggle('collapsed');
-    btn.innerHTML   = collapsed ? '&#x276F;' : '&#x276E;';
-    btn.title       = collapsed ? 'Show filters' : 'Hide filters';
-    // Invalidate map size after transition
+    btn.innerHTML = collapsed ? '&#x276F;' : '&#x276E;';
+    btn.title     = collapsed ? 'Show filters' : 'Hide filters';
+
+    if (isMobile()) {
+      backdrop.classList.toggle('visible', !collapsed);
+      btn.style.left = collapsed ? '0' : '280px';
+    }
+
     setTimeout(function(){ map.invalidateSize(); }, 270);
+  }
+
+  btn.addEventListener('click', toggleSidebar);
+
+  // Close sidebar when tapping backdrop on mobile
+  backdrop.addEventListener('click', function() {
+    if (!sidebar.classList.contains('collapsed')) toggleSidebar();
+  });
+
+  // Re-check on resize
+  window.addEventListener('resize', function() {
+    if (!isMobile()) {
+      sidebar.classList.remove('collapsed');
+      backdrop.classList.remove('visible');
+      btn.innerHTML = '&#x276E;';
+      btn.style.left = '';
+    }
   });
 })();
 
