@@ -1,0 +1,310 @@
+{
+  "110 Morningside Dr, New York, NY": {
+    "lat": 40.8097382,
+    "lon": -73.9577776
+  },
+  "130 Morningside Dr, New York, NY": {
+    "lat": 40.8101816,
+    "lon": -73.9576546
+  },
+  "150 Claremont Ave, New York, NY": {
+    "lat": 40.8132591,
+    "lon": -73.9608998
+  },
+  "181 Claremont Ave, New York, NY": {
+    "lat": 40.8144995,
+    "lon": -73.9608098
+  },
+  "189 Claremont Ave, New York, NY": {
+    "lat": 42.9274539,
+    "lon": -78.879344
+  },
+  "191 Claremont Ave, New York, NY": {
+    "lat": 40.8150687,
+    "lon": -73.9603052
+  },
+  "195 Claremont Ave, New York, NY": {
+    "lat": 40.8153021,
+    "lon": -73.9600673
+  },
+  "400 W 119th St, New York, NY": {
+    "lat": 40.8080066,
+    "lon": -73.9584967
+  },
+  "401 W 118th St, New York, NY": {
+    "lat": 40.8076019,
+    "lon": -73.9586244
+  },
+  "403 W 115th St, New York, NY": {
+    "lat": 40.8058104,
+    "lon": -73.9602077
+  },
+  "405 W 118th St, New York, NY": {
+    "lat": 40.8078011,
+    "lon": -73.9587795
+  },
+  "411 W 115th St, New York, NY": {
+    "lat": 40.8058951,
+    "lon": -73.9604213
+  },
+  "414 W 120th St, New York, NY": {
+    "lat": 40.8087462,
+    "lon": -73.9586156
+  },
+  "415 W 115th St, New York, NY": {
+    "lat": 40.8059821,
+    "lon": -73.9606341
+  },
+  "415 W 118th St, New York, NY": {
+    "lat": 40.8078661,
+    "lon": -73.9589467
+  },
+  "415 W 120th St, New York, NY": {
+    "lat": 40.809174,
+    "lon": -73.958146
+  },
+  "417 W 118th St, New York, NY": {
+    "lat": 40.8079446,
+    "lon": -73.9590997
+  },
+  "419 W 115th St, New York, NY": {
+    "lat": 40.8060708,
+    "lon": -73.9608445
+  },
+  "419 W 118th St, New York, NY": {
+    "lat": 40.8080069,
+    "lon": -73.9592567
+  },
+  "419 W 119th St, New York, NY": {
+    "lat": 40.8085067,
+    "lon": -73.9586004
+  },
+  "420 W 116th St, New York, NY": {
+    "lat": 40.8061596,
+    "lon": -73.9603113
+  },
+  "420 W 119th St, New York, NY": {
+    "lat": 40.8082364,
+    "lon": -73.9590884
+  },
+  "421 W 118th St, New York, NY": {
+    "lat": 40.8080608,
+    "lon": -73.9594284
+  },
+  "423 W 118th St, New York, NY": {
+    "lat": 40.8080799,
+    "lon": -73.9597525
+  },
+  "423 W 120th St, New York, NY": {
+    "lat": 40.8093566,
+    "lon": -73.958873
+  },
+  "424 W 119th St, New York, NY": {
+    "lat": 40.8083886,
+    "lon": -73.9591703
+  },
+  "434 W 120th St, New York, NY": {
+    "lat": 40.8089698,
+    "lon": -73.9590975
+  },
+  "435 W 119th St, New York, NY": {
+    "lat": 40.8086833,
+    "lon": -73.9592127
+  },
+  "500 W 122nd St, New York, NY": {
+    "lat": 40.8106514,
+    "lon": -73.9586473
+  },
+  "502 W 113th St, New York, NY": {
+    "lat": 40.8049209,
+    "lon": -73.9631026
+  },
+  "502 W 122nd St, New York, NY": {
+    "lat": 40.8106838,
+    "lon": -73.9589557
+  },
+  "506 W 113th St, New York, NY": {
+    "lat": 40.804993,
+    "lon": -73.9632766
+  },
+  "506 W 122nd St, New York, NY": {
+    "lat": 40.8107426,
+    "lon": -73.9591172
+  },
+  "507 W 113th St, New York, NY": {
+    "lat": 40.8053239,
+    "lon": -73.9628654
+  },
+  "509 W 112th St, New York, NY": {
+    "lat": 40.804685,
+    "lon": -73.9637134
+  },
+  "511 W 112th St, New York, NY": {
+    "lat": 40.8048546,
+    "lon": -73.9637938
+  },
+  "511 W 113th St, New York, NY": {
+    "lat": 40.8053752,
+    "lon": -73.9631987
+  },
+  "514 W 114th St, New York, NY": {
+    "lat": 40.8056929,
+    "lon": -73.9629579
+  },
+  "520 W 114th St, New York, NY": {
+    "lat": 40.8057864,
+    "lon": -73.9631994
+  },
+  "520 W 122nd St, New York, NY": {
+    "lat": 40.8110556,
+    "lon": -73.9598633
+  },
+  "521 W 111th St, New York, NY": {
+    "lat": 40.8043033,
+    "lon": -73.9645649
+  },
+  "521 W 112th St, New York, NY": {
+    "lat": 40.8048479,
+    "lon": -73.9640985
+  },
+  "522 W 112th St, New York, NY": {
+    "lat": 40.8046791,
+    "lon": -73.9644696
+  },
+  "523 W 112th St, New York, NY": {
+    "lat": 40.8050507,
+    "lon": -73.9642515
+  },
+  "524 W 122nd St, New York, NY": {
+    "lat": 40.8111065,
+    "lon": -73.9600757
+  },
+  "526 W 112th St, New York, NY": {
+    "lat": 40.8047467,
+    "lon": -73.9646259
+  },
+  "526 W 113th St, New York, NY": {
+    "lat": 40.8051645,
+    "lon": -73.9637002
+  },
+  "526 W 122nd St, New York, NY": {
+    "lat": 40.8111607,
+    "lon": -73.9602066
+  },
+  "529 W 111th St, New York, NY": {
+    "lat": 40.8044336,
+    "lon": -73.9648863
+  },
+  "530 W 112th St, New York, NY": {
+    "lat": 40.8048102,
+    "lon": -73.9647897
+  },
+  "530 W 113th St, New York, NY": {
+    "lat": 40.8052628,
+    "lon": -73.9638112
+  },
+  "530 W 122nd St, New York, NY": {
+    "lat": 40.8112166,
+    "lon": -73.9603397
+  },
+  "531 W 112th St, New York, NY": {
+    "lat": 40.8051576,
+    "lon": -73.9644277
+  },
+  "535 W 111th St, New York, NY": {
+    "lat": 40.8045482,
+    "lon": -73.9651344
+  },
+  "535 W 113th St, New York, NY": {
+    "lat": 40.805729,
+    "lon": -73.9638106
+  },
+  "536 W 113th St, New York, NY": {
+    "lat": 40.8053192,
+    "lon": -73.9640502
+  },
+  "539 W 112th St, New York, NY": {
+    "lat": 40.80532,
+    "lon": -73.9650511
+  },
+  "540 W 112th St, New York, NY": {
+    "lat": 40.8050848,
+    "lon": -73.9651174
+  },
+  "540 W 122nd St, New York, NY": {
+    "lat": 40.8115623,
+    "lon": -73.9607713
+  },
+  "541 W 113th St, New York, NY": {
+    "lat": 40.8057902,
+    "lon": -73.964204
+  },
+  "542 W 112th St, New York, NY": {
+    "lat": 40.8051924,
+    "lon": -73.965412
+  },
+  "547 Riverside Dr, New York, NY": {
+    "lat": 40.8150038,
+    "lon": -73.9609693
+  },
+  "548 Riverside Dr, New York, NY": {
+    "lat": 40.8152468,
+    "lon": -73.9607924
+  },
+  "560 Riverside Dr, New York, NY": {
+    "lat": 40.8169598,
+    "lon": -73.9603963
+  },
+  "560 W 113th St, New York, NY": {
+    "lat": 40.8056514,
+    "lon": -73.9647565
+  },
+  "601 W 113th St, New York, NY": {
+    "lat": 40.8063319,
+    "lon": -73.9655939
+  },
+  "604 W 115th St, New York, NY": {
+    "lat": 40.8073974,
+    "lon": -73.9650707
+  },
+  "610 W 113th St, New York, NY": {
+    "lat": 40.8062248,
+    "lon": -73.9663194
+  },
+  "610 W 115th St, New York, NY": {
+    "lat": 40.8074937,
+    "lon": -73.9654135
+  },
+  "610 W 116th St, New York, NY": {
+    "lat": 40.8081645,
+    "lon": -73.9649228
+  },
+  "614 W 113th St, New York, NY": {
+    "lat": 40.8062998,
+    "lon": -73.9663888
+  },
+  "629 W 115th St, New York, NY": {
+    "lat": 40.8080614,
+    "lon": -73.9656339
+  },
+  "18 W 108th St, New York, NY": {
+    "lat": 40.7997716,
+    "lon": -73.9603233
+  },
+  "61 W 108th St, New York, NY": {
+    "lat": 40.8003409,
+    "lon": -73.9608864
+  },
+  "74 W 108th St, New York, NY": {
+    "lat": 40.8003362,
+    "lon": -73.9616652
+  },
+  "950 Columbus Ave, New York, NY": {
+    "lat": 40.7998098,
+    "lon": -73.9627986
+  },
+  "3260 Henry Hudson Pkwy, Bronx, NY": {
+    "lat": 40.8778251,
+    "lon": -73.9221151
+  }
+}

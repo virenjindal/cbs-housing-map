@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "columbia-housing-map",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "3456", "/Users/viren/Desktop/columbia_residential"],
+      "port": 3456
+    }
+  ]
+}
