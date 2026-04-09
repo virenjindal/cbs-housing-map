@@ -418,18 +418,38 @@
     pointer-events: none;
   }
 
-  /* ── Sidebar always visible ── */
+  /* ── Sidebar collapsible with proper positioning ── */
   .sidebar {
     transition: width 0.25s ease, min-width 0.25s ease;
+    flex-shrink: 0;
+    position: relative;
   }
   .sidebar.collapsed {
-    width: 290px !important;
-    min-width: 290px !important;
+    width: 0;
+    min-width: 0;
     overflow: hidden;
   }
   .sidebar-toggle {
-    display: none;
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: -18px;
+    z-index: 500;
+    background: #003087;
+    color: #fff;
+    border: none;
+    border-radius: 0 6px 6px 0;
+    width: 18px;
+    height: 48px;
+    cursor: pointer;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 2px 0 6px rgba(0,0,0,0.18);
+    padding: 0;
   }
+  .sidebar-toggle:hover { background: #0a47b8; }
   .map-wrap {
     position: relative;
     flex: 1;
