@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Columbia University Housing Map</title>
+<title>CBS Housing Map</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -460,6 +460,121 @@
   @media (max-width: 700px) {
     .sidebar { width: 240px; min-width: 240px; }
   }
+
+  /* ── Feedback button ── */
+  .feedback-btn {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9000;
+    background: linear-gradient(135deg, #001448 0%, #003087 100%);
+    color: #fff;
+    border: none;
+    border-radius: 28px;
+    padding: 11px 20px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,30,87,0.40);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: background 0.15s, transform 0.12s;
+  }
+  .feedback-btn:hover { background: linear-gradient(135deg, #003087 0%, #0a47b8 100%); transform: translateY(-1px); }
+
+  /* ── Feedback modal overlay ── */
+  .fb-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 9100;
+    align-items: center;
+    justify-content: center;
+  }
+  .fb-overlay.open { display: flex; }
+
+  .fb-modal {
+    background: #fff;
+    border-radius: 14px;
+    padding: 28px 28px 24px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 12px 48px rgba(0,0,0,0.25);
+    position: relative;
+  }
+  .fb-modal h2 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #001448;
+    margin-bottom: 4px;
+  }
+  .fb-modal p.fb-sub {
+    font-size: 12px;
+    color: #8a92a6;
+    margin-bottom: 18px;
+  }
+  .fb-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #aab0c4;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .fb-close:hover { color: #555; }
+  .fb-field { margin-bottom: 14px; }
+  .fb-field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #8a92a6;
+    margin-bottom: 5px;
+  }
+  .fb-field input, .fb-field textarea {
+    width: 100%;
+    border: 1.5px solid #d0d5e0;
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    color: #1a1a2e;
+    outline: none;
+    transition: border-color 0.14s;
+    resize: none;
+  }
+  .fb-field input:focus, .fb-field textarea:focus { border-color: #003087; }
+  .fb-submit {
+    width: 100%;
+    padding: 11px;
+    background: linear-gradient(135deg, #001448 0%, #003087 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    margin-top: 4px;
+  }
+  .fb-submit:hover { background: linear-gradient(135deg, #003087 0%, #0a47b8 100%); }
+  .fb-submit:disabled { opacity: 0.6; cursor: not-allowed; }
+  .fb-status {
+    margin-top: 12px;
+    font-size: 12.5px;
+    text-align: center;
+    min-height: 18px;
+  }
+  .fb-status.success { color: #00695c; font-weight: 600; }
+  .fb-status.error   { color: #c62828; }
 </style>
 </head>
 <body>
@@ -467,8 +582,8 @@
 <div class="header">
   <div class="header-crown"><img id="headerLogo" alt="CU"></div>
   <div class="header-text">
-    <h1>Columbia University Housing Map</h1>
-    <p>Interactive residential building explorer · All campuses</p>
+    <h1>CBS Housing Map</h1>
+    <p>Interactive Shared Apartments Explorer</p>
   </div>
   <div class="header-badge">85 Buildings</div>
 </div>
@@ -608,37 +723,12 @@
         </div>
       </div>
 
-      <!-- Laundry Hours -->
-      <div class="filter-section">
-        <div class="filter-label">Laundry Hours</div>
-        <div class="cb-list">
-          <label class="cb-item">
-            <input type="checkbox" class="cb-laundry" value="24/7" checked> 24/7
-          </label>
-          <label class="cb-item">
-            <input type="checkbox" class="cb-laundry" value="7AM-10PM" checked> 7AM–10PM
-          </label>
-          <label class="cb-item">
-            <input type="checkbox" class="cb-laundry" value="8AM-10PM" checked> 8AM–10PM
-          </label>
-          <label class="cb-item">
-            <input type="checkbox" class="cb-laundry" value="8AM-9PM" checked> 8AM–9PM
-          </label>
-          <label class="cb-item">
-            <input type="checkbox" class="cb-laundry" value="Not listed" checked> Not listed
-          </label>
-        </div>
-      </div>
-
       <!-- Laundry Location -->
       <div class="filter-section">
         <div class="filter-label">Laundry Location</div>
         <div class="cb-list">
           <label class="cb-item">
-            <input type="checkbox" class="cb-ll" value="in-unit" checked> In Unit
-          </label>
-          <label class="cb-item">
-            <input type="checkbox" class="cb-ll" value="in-bldg" checked> In Building
+            <input type="checkbox" class="cb-ll" value="in-bldg" checked> In Unit / In Building
           </label>
           <label class="cb-item">
             <input type="checkbox" class="cb-ll" value="shared" checked> Shared / Off-site
@@ -676,6 +766,32 @@
   <div class="map-wrap">
     <button class="sidebar-toggle" id="sidebarToggle" title="Toggle filters">&#x276E;</button>
     <div id="map"></div>
+  </div>
+</div>
+
+<!-- Feedback Button -->
+<button class="feedback-btn" id="feedbackBtn">💬 Feedback</button>
+
+<!-- Feedback Modal -->
+<div class="fb-overlay" id="fbOverlay">
+  <div class="fb-modal">
+    <button class="fb-close" id="fbClose">&times;</button>
+    <h2>Share Your Feedback</h2>
+    <p class="fb-sub">Help us improve the CBS Housing Map</p>
+    <div class="fb-field">
+      <label>Name</label>
+      <input type="text" id="fbName" placeholder="Your name" autocomplete="name">
+    </div>
+    <div class="fb-field">
+      <label>Email</label>
+      <input type="email" id="fbEmail" placeholder="your@email.com" autocomplete="email">
+    </div>
+    <div class="fb-field">
+      <label>Feedback</label>
+      <textarea id="fbMessage" rows="4" placeholder="Share your thoughts, suggestions, or report an issue…"></textarea>
+    </div>
+    <button class="fb-submit" id="fbSubmit">Send Feedback</button>
+    <div class="fb-status" id="fbStatus"></div>
   </div>
 </div>
 
@@ -857,16 +973,15 @@ function makePopup(b) {
 
   return `
     <div class="popup-header">
-      <div class="popup-num">Building #${b.id}</div>
       <div class="popup-addr">${b.addr}</div>
-      <div class="popup-meta">${b.nbhd} · Built ${b.built}</div>
+      <div class="popup-meta">${b.nbhd}</div>
     </div>
     <div class="popup-body">
       <div class="popup-grid">
         <div class="popup-stat"><span class="popup-stat-label">Floors</span><span class="popup-stat-val">${b.floors}</span></div>
         <div class="popup-stat"><span class="popup-stat-label">Apartments</span><span class="popup-stat-val">${b.apts}</span></div>
         <div class="popup-stat"><span class="popup-stat-label">A/C</span><span class="popup-stat-val">${b.ac}</span></div>
-        <div class="popup-stat"><span class="popup-stat-label">Laundry Hours</span><span class="popup-stat-val">${b.laundry}</span></div>
+        <div class="popup-stat"><span class="popup-stat-label">Year Built</span><span class="popup-stat-val">${b.built}</span></div>
         <div class="popup-stat"><span class="popup-stat-label">Laundry</span><span class="popup-stat-val">${llLabel}</span></div>
         <div class="popup-stat"><span class="popup-stat-label">Door</span><span class="popup-stat-val">${doorLabel}</span></div>
       </div>
@@ -934,7 +1049,6 @@ function applyFilters() {
   const mustChips   = getActiveChips('mustFilter');
   const featChips   = getActiveChips('featFilter');
   const doors       = getChecked('cb-door');
-  const laundryHrs  = getChecked('cb-laundry');
   const laundryLocs = getChecked('cb-ll');
 
   let count = 0;
@@ -985,19 +1099,11 @@ function applyFilters() {
       if (!doors.includes(bDoor)) show = false;
     }
 
-    // Laundry hours (OR)
-    if (show && laundryHrs.length > 0) {
-      const lh = b.laundry || 'Not listed';
-      const knownHours = ['24/7','7AM-10PM','8AM-10PM','8AM-9PM'];
-      let matched = laundryHrs.includes(lh);
-      if (!matched && !knownHours.includes(lh)) {
-        matched = laundryHrs.includes('Not listed');
-      }
-      if (!matched) show = false;
+    // Laundry location (OR) — treat in-unit same as in-bldg
+    if (show) {
+      const llNorm = b.ll === 'in-unit' ? 'in-bldg' : b.ll;
+      if (!laundryLocs.includes(llNorm)) show = false;
     }
-
-    // Laundry location (OR)
-    if (show && !laundryLocs.includes(b.ll)) show = false;
 
     if (show) {
       map.addLayer(m);
@@ -1066,6 +1172,84 @@ document.getElementById('headerLogo').src = CBS_DATA;
     btn.title       = collapsed ? 'Show filters' : 'Hide filters';
     // Invalidate map size after transition
     setTimeout(function(){ map.invalidateSize(); }, 270);
+  });
+})();
+
+// ══════════════════════════════════════════════════════
+//  Feedback modal
+// ══════════════════════════════════════════════════════
+(function() {
+  const overlay  = document.getElementById('fbOverlay');
+  const openBtn  = document.getElementById('feedbackBtn');
+  const closeBtn = document.getElementById('fbClose');
+  const submitBtn= document.getElementById('fbSubmit');
+  const status   = document.getElementById('fbStatus');
+
+  openBtn.addEventListener('click', function() {
+    overlay.classList.add('open');
+    status.textContent = '';
+    status.className = 'fb-status';
+  });
+
+  closeBtn.addEventListener('click', function() {
+    overlay.classList.remove('open');
+  });
+
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+
+  submitBtn.addEventListener('click', async function() {
+    const name    = document.getElementById('fbName').value.trim();
+    const email   = document.getElementById('fbEmail').value.trim();
+    const message = document.getElementById('fbMessage').value.trim();
+
+    if (!name || !email || !message) {
+      status.textContent = 'Please fill in all fields.';
+      status.className = 'fb-status error';
+      return;
+    }
+    const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRe.test(email)) {
+      status.textContent = 'Please enter a valid email address.';
+      status.className = 'fb-status error';
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Sending…';
+    status.textContent = '';
+    status.className = 'fb-status';
+
+    try {
+      const res = await fetch('https://formsubmit.co/ajax/virenvj12@gmail.com', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          name: name,
+          email: email,
+          message: message,
+          _subject: 'CBS Housing Map – Feedback from ' + name
+        })
+      });
+      const data = await res.json();
+      if (data.success === 'true' || data.success === true) {
+        status.textContent = '✓ Thank you! Your feedback has been sent.';
+        status.className = 'fb-status success';
+        document.getElementById('fbName').value = '';
+        document.getElementById('fbEmail').value = '';
+        document.getElementById('fbMessage').value = '';
+        setTimeout(() => overlay.classList.remove('open'), 2200);
+      } else {
+        throw new Error('Submission failed');
+      }
+    } catch(err) {
+      status.textContent = 'Something went wrong. Please try again.';
+      status.className = 'fb-status error';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Send Feedback';
+    }
   });
 })();
 </script>
