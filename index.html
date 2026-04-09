@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Columbia University Housing Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    background: #f0f2f5;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+    color: #1a1a2e;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: linear-gradient(135deg, #001448 0%, #003087 60%, #0a47b8 100%);
+    color: #fff;
+    padding: 14px 24px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+    box-shadow: 0 2px 12px rgba(0,30,87,0.35);
+    z-index: 100;
+  }
+  .header-crown {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 2px rgba(255,255,255,0.35);
+  }
+  .header-crown img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .header-text h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .header-text p {
+    font-size: 11.5px;
+    opacity: 0.75;
+    font-weight: 400;
+    margin-top: 1px;
+  }
+  .header-badge {
+    margin-left: auto;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    backdrop-filter: blur(4px);
+  }
+
+  /* ── Layout ── */
+  .main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    width: 290px;
+    min-width: 290px;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid #e5e8ef;
+    overflow: hidden;
+    z-index: 10;
+  }
+
+  .sidebar-topbar {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e8ef;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    background: #fafbfc;
+  }
+  .result-count {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #003087;
+  }
+  .btn-reset {
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #fff;
+    background: #003087;
+    border: none;
+    border-radius: 16px;
+    padding: 5px 13px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-reset:hover { background: #0a47b8; }
+
+  .sidebar-filters {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 0 20px;
+  }
+  .sidebar-filters::-webkit-scrollbar { width: 4px; }
+  .sidebar-filters::-webkit-scrollbar-thumb { background: #d0d5e0; border-radius: 4px; }
+
+  /* ── Filter sections ── */
+  .filter-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f2f5;
+  }
+  .filter-section:last-child { border-bottom: none; }
+  .filter-label {
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #8a92a6;
+    margin-bottom: 9px;
+  }
+
+  /* Checkboxes */
+  .cb-list { display: flex; flex-direction: column; gap: 6px; }
+  .cb-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 12.5px;
+    color: #2d3357;
+    font-weight: 400;
+  }
+  .cb-item input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: #003087;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .cb-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* Pill toggles (eligible) */
+  .pill-group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .pill {
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 500;
+    padding: 4px 11px;
+    border-radius: 20px;
+    border: 1.5px solid #d0d5e0;
+    background: #f5f6fa;
+    color: #5a6278;
+    cursor: pointer;
+    transition: all 0.14s;
+    user-select: none;
+  }
+  .pill.on {
+    background: #003087;
+    border-color: #003087;
+    color: #fff;
+  }
+  .pill:hover:not(.on) { border-color: #003087; color: #003087; }
+
+  /* Chip toggles (must-have / features) */
+  .chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-family: 'Inter', sans-serif;
+    font-size: 11.5px;
+    font-weight: 500;
+    padding: 5px 11px;
+    border-radius: 8px;
+    border: 1.5px solid #d0d5e0;
+    background: #f5f6fa;
+    color: #5a6278;
+    cursor: pointer;
+    transition: all 0.14s;
+    user-select: none;
+  }
+  .chip.on {
+    background: #e8eef8;
+    border-color: #003087;
+    color: #003087;
+    font-weight: 600;
+  }
+  .chip:hover:not(.on) { border-color: #aab0c4; }
+
+  /* Dual range slider */
+  .dual-range-wrap {
+    position: relative;
+    height: 28px;
+    margin: 6px 0 4px;
+  }
+  .dual-range-track {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: #e0e3ec;
+    border-radius: 4px;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .dual-range-fill {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: #003087;
+    border-radius: 4px;
+    pointer-events: none;
+  }
+  .dual-range-wrap input[type="range"] {
+    position: absolute;
+    width: 100%;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 4px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    pointer-events: none;
+    outline: none;
+    margin: 0;
+    padding: 0;
+  }
+  .dual-range-wrap input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #003087;
+    border: 2.5px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,48,135,0.4);
+    cursor: pointer;
+    pointer-events: all;
+    position: relative;
+    z-index: 1;
+  }
+  .dual-range-wrap input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #003087;
+    border: 2.5px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,48,135,0.4);
+    cursor: pointer;
+    pointer-events: all;
+  }
+  .range-values {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2px;
+  }
+  .range-badge {
+    font-size: 11px;
+    font-weight: 600;
+    color: #003087;
+    background: #e8eef8;
+    border-radius: 10px;
+    padding: 2px 8px;
+  }
+
+  /* Legend */
+  .legend-list { display: flex; flex-direction: column; gap: 6px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #3a4060; }
+  .legend-dot {
+    width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0;
+  }
+  .legend-note {
+    font-size: 11px;
+    color: #8a92a6;
+    margin-top: 8px;
+    line-height: 1.5;
+  }
+
+  /* ── Map ── */
+  #map {
+    z-index: 1;
+  }
+
+  /* ── Popups ── */
+  .leaflet-popup-content-wrapper {
+    border-radius: 12px !important;
+    box-shadow: 0 6px 28px rgba(0,0,0,0.18) !important;
+    padding: 0 !important;
+    overflow: hidden;
+    max-width: 300px;
+    min-width: 240px;
+  }
+  .leaflet-popup-content {
+    margin: 0 !important;
+    width: auto !important;
+  }
+  .leaflet-popup-tip-container { margin-top: -1px; }
+
+  .popup-header {
+    padding: 11px 14px 10px;
+    background: linear-gradient(135deg, #001448 0%, #003087 100%);
+    color: #fff;
+  }
+  .popup-num {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    opacity: 0.65;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .popup-addr {
+    font-size: 13.5px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+  .popup-meta {
+    font-size: 10.5px;
+    opacity: 0.75;
+    margin-top: 3px;
+  }
+
+  .popup-body {
+    padding: 11px 14px;
+    background: #fff;
+  }
+  .popup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px 10px;
+    margin-bottom: 10px;
+  }
+  .popup-stat { display: flex; flex-direction: column; }
+  .popup-stat-label {
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: #8a92a6;
+    margin-bottom: 1px;
+  }
+  .popup-stat-val {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #1a1a2e;
+  }
+
+  .popup-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+  .popup-tag {
+    font-size: 10.5px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #e8eef8;
+    color: #003087;
+    border: 1px solid #c8d6f0;
+  }
+  .popup-tag.green { background: #e6f4f0; color: #00695c; border-color: #b2dfdb; }
+  .popup-tag.amber { background: #fff3e0; color: #e65100; border-color: #ffcc80; }
+
+  .popup-eligible { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
+  .popup-elig-tag {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 10px;
+    background: #f0f2f8;
+    color: #4a5278;
+    border: 1px solid #dde2f0;
+  }
+
+  .popup-notes {
+    font-size: 11px;
+    color: #6a7090;
+    line-height: 1.5;
+    background: #f9fafc;
+    border-radius: 6px;
+    padding: 6px 9px;
+    border-left: 3px solid #c8d6f0;
+    margin-top: 6px;
+  }
+
+  /* Campus logo markers */
+  .campus-logo-ring {
+    border-radius: 50%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 3px 14px rgba(0,0,0,0.28);
+    overflow: hidden;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  /* ── Sidebar collapse ── */
+  .sidebar {
+    transition: width 0.25s ease, min-width 0.25s ease;
+  }
+  .sidebar.collapsed {
+    width: 0 !important;
+    min-width: 0 !important;
+    overflow: hidden;
+  }
+  .sidebar-toggle {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 0;
+    z-index: 500;
+    background: #003087;
+    color: #fff;
+    border: none;
+    border-radius: 0 6px 6px 0;
+    width: 18px;
+    height: 48px;
+    cursor: pointer;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 2px 0 6px rgba(0,0,0,0.18);
+    transition: left 0.25s ease;
+    padding: 0;
+  }
+  .sidebar-toggle:hover { background: #0a47b8; }
+  .map-wrap {
+    position: relative;
+    flex: 1;
+    overflow: hidden;
+  }
+  #map { width: 100%; height: 100%; }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .sidebar { width: 240px; min-width: 240px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-crown"><img id="headerLogo" alt="CU"></div>
+  <div class="header-text">
+    <h1>Columbia University Housing Map</h1>
+    <p>Interactive residential building explorer · All campuses</p>
+  </div>
+  <div class="header-badge">85 Buildings</div>
+</div>
+
+<div class="main">
+  <!-- ── Sidebar ── -->
+  <div class="sidebar">
+    <div class="sidebar-topbar">
+      <span class="result-count" id="resultCount">Showing 85 of 85</span>
+      <button class="btn-reset" id="btnReset">↺ Reset All</button>
+    </div>
+
+    <div class="sidebar-filters">
+
+      <!-- Neighborhood -->
+      <div class="filter-section">
+        <div class="filter-label">Neighborhood</div>
+        <div class="cb-list" id="nbhdFilter">
+          <label class="cb-item">
+            <input type="checkbox" class="cb-nbhd" value="Morningside Heights" checked>
+            <span class="cb-dot" style="background:#003087;"></span>
+            Morningside Heights
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" class="cb-nbhd" value="Manhattan Valley" checked>
+            <span class="cb-dot" style="background:#e07b00;"></span>
+            Manhattan Valley
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" class="cb-nbhd" value="Manhattanville" checked>
+            <span class="cb-dot" style="background:#00796b;"></span>
+            Manhattanville
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" class="cb-nbhd" value="Riverdale, Bronx" checked>
+            <span class="cb-dot" style="background:#7b1fa2;"></span>
+            Riverdale, Bronx
+          </label>
+        </div>
+      </div>
+
+      <!-- Eligible Residents -->
+      <div class="filter-section">
+        <div class="filter-label">Eligible Residents</div>
+        <div class="pill-group" id="eligFilter">
+          <span class="pill on" data-val="Students">Students</span>
+          <span class="pill on" data-val="GS Students">GS Students</span>
+          <span class="pill on" data-val="Graduate Students">Graduate Students</span>
+          <span class="pill on" data-val="Law Students">Law Students</span>
+          <span class="pill on" data-val="Postdocs">Postdocs</span>
+          <span class="pill on" data-val="Faculty">Faculty</span>
+          <span class="pill on" data-val="Staff">Staff</span>
+        </div>
+      </div>
+
+      <!-- Year Built -->
+      <div class="filter-section">
+        <div class="filter-label">Year Built</div>
+        <div class="dual-range-wrap">
+          <div class="dual-range-track">
+            <div class="dual-range-fill" id="builtFill"></div>
+          </div>
+          <input type="range" id="builtLo" min="1898" max="2024" value="1898" style="z-index:2;">
+          <input type="range" id="builtHi" min="1898" max="2024" value="2024" style="z-index:3;">
+        </div>
+        <div class="range-values">
+          <span class="range-badge" id="builtLoV">1898</span>
+          <span class="range-badge" id="builtHiV">2024</span>
+        </div>
+      </div>
+
+      <!-- Floors -->
+      <div class="filter-section">
+        <div class="filter-label">Floors</div>
+        <div class="dual-range-wrap">
+          <div class="dual-range-track">
+            <div class="dual-range-fill" id="floorsFill"></div>
+          </div>
+          <input type="range" id="floorsLo" min="1" max="34" value="1" style="z-index:2;">
+          <input type="range" id="floorsHi" min="1" max="34" value="34" style="z-index:3;">
+        </div>
+        <div class="range-values">
+          <span class="range-badge" id="floorsLoV">1</span>
+          <span class="range-badge" id="floorsHiV">34</span>
+        </div>
+      </div>
+
+      <!-- A/C Type -->
+      <div class="filter-section">
+        <div class="filter-label">A/C Type</div>
+        <div class="cb-list">
+          <label class="cb-item">
+            <input type="checkbox" class="cb-ac" value="Window" checked> Window Units
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" class="cb-ac" value="Central AC" checked> Central A/C
+          </label>
+        </div>
+      </div>
+
+      <!-- Must Have -->
+      <div class="filter-section">
+        <div class="filter-label">Must Have</div>
+        <div class="chip-group" id="mustFilter">
+          <span class="chip" data-key="elevator">🛗 Elevator</span>
+          <span class="chip" data-key="ada">♿ ADA</span>
+          <span class="chip" data-key="bike">🚲 Bike Storage</span>
+          <span class="chip" data-key="parking">🅿️ Parking</span>
+        </div>
+      </div>
+
+      <!-- Special Features -->
+      <div class="filter-section">
+        <div class="filter-label">Special Features</div>
+        <div class="chip-group" id="featFilter">
+          <span class="chip" data-key="gym">🏋 Gym</span>
+          <span class="chip" data-key="rd">🏙 Roof Deck</span>
+          <span class="chip" data-key="cr">🛋 Common Room</span>
+          <span class="chip" data-key="sh">🚌 Campus Shuttle</span>
+          <span class="chip" data-key="rv">🌿 Riverside Views</span>
+        </div>
+      </div>
+
+      <!-- Door Attendant -->
+      <div class="filter-section">
+        <div class="filter-label">Door Attendant</div>
+        <div class="cb-list">
+          <label class="cb-item">
+            <input type="checkbox" class="cb-door" value="None" checked> None
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" class="cb-door" value="Part-time" checked> Part-time
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" class="cb-door" value="Full-time" checked> Full-time
+          </label>
+        </div>
+      </div>
+
+      <!-- Laundry Hours -->
+      <div class="filter-section">
+        <div class="filter-label">Laundry Hours</div>
+        <div class="cb-list">
+          <label class="cb-item">
+            <input type="checkbox" class="cb-laundry" value="24/7" checked> 24/7
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" class="cb-laundry" value="7AM-10PM" checked> 7AM–10PM
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" class="cb-laundry" value="8AM-10PM" checked> 8AM–10PM
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" class="cb-laundry" value="8AM-9PM" checked> 8AM–9PM
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" class="cb-laundry" value="Not listed" checked> Not listed
+          </label>
+        </div>
+      </div>
+
+      <!-- Laundry Location -->
+      <div class="filter-section">
+        <div class="filter-label">Laundry Location</div>
+        <div class="cb-list">
+          <label class="cb-item">
+            <input type="checkbox" class="cb-ll" value="in-unit" checked> In Unit
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" class="cb-ll" value="in-bldg" checked> In Building
+          </label>
+          <label class="cb-item">
+            <input type="checkbox" class="cb-ll" value="shared" checked> Shared / Off-site
+          </label>
+        </div>
+      </div>
+
+      <!-- Legend -->
+      <div class="filter-section">
+        <div class="filter-label">Legend</div>
+        <div class="legend-list">
+          <div class="legend-item">
+            <span class="legend-dot" style="background:#003087;"></span>
+            Morningside Heights
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background:#e07b00;"></span>
+            Manhattan Valley
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background:#00796b;"></span>
+            Manhattanville
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot" style="background:#7b1fa2;"></span>
+            Riverdale, Bronx
+          </div>
+        </div>
+        <div class="legend-note">Circle size reflects number of apartments. Campus area polygons and landmark icons are always visible.</div>
+      </div>
+
+    </div><!-- /sidebar-filters -->
+  </div><!-- /sidebar -->
+
+  <div class="map-wrap">
+    <button class="sidebar-toggle" id="sidebarToggle" title="Toggle filters">&#x276E;</button>
+    <div id="map"></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ══════════════════════════════════════════════════════
+//  Building Dataset – 85 buildings
+// ══════════════════════════════════════════════════════
+const BUILDINGS = [
+  {id:1,  addr:"100 La Salle St (Morningside Gardens)", nbhd:"Morningside Heights", built:1957, floors:1,  apts:1,   ada:"Yes", ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"8AM-10PM",  parking:false, playroom:false, eligible:"Law Students",                        notes:"Columbia Law School owns 1 apt in large co-op; 3rd-party managed", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8131263, lon:-73.9593297},
+  {id:2,  addr:"110 Morningside Dr",                    nbhd:"Morningside Heights", built:1910, floors:6,  apts:53,  ada:"Yes", ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8097382, lon:-73.9577776},
+  {id:3,  addr:"130 Morningside Dr",                    nbhd:"Morningside Heights", built:1922, floors:6,  apts:49,  ada:"Yes", ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8101816, lon:-73.9576546},
+  {id:4,  addr:"150 Claremont Ave",                     nbhd:"Morningside Heights", built:1921, floors:6,  apts:49,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8132591, lon:-73.9608998},
+  {id:5,  addr:"181 Claremont Ave",                     nbhd:"Morningside Heights", built:1926, floors:6,  apts:24,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8144995, lon:-73.9608098},
+  {id:6,  addr:"189 Claremont Ave",                     nbhd:"Morningside Heights", built:1905, floors:6,  apts:20,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"GS Students",                           notes:"GS-leased units in 3rd-party bldg", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8148, lon:-73.9606},
+  {id:7,  addr:"191 Claremont Ave",                     nbhd:"Morningside Heights", built:1920, floors:1,  apts:1,   ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"GS Students",                           notes:"GS-leased unit in 3rd-party bldg", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8150687, lon:-73.9603052},
+  {id:8,  addr:"195 Claremont Ave",                     nbhd:"Morningside Heights", built:1905, floors:6,  apts:60,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:true,  laundry:"7AM-10PM",  parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8153021, lon:-73.9600673},
+  {id:9,  addr:"400 W 119th St (Butler Hall)",          nbhd:"Morningside Heights", built:1960, floors:15, apts:305, ada:"Yes", ac:"Window",     elevator:true,  door:"Full-time", bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       notes:"Roof Deck", ll:"in-bldg", gym:false, rd:true,  cr:false, sh:false, rv:false, lat:40.8080066, lon:-73.9584967},
+  {id:10, addr:"401 W 118th St",                        nbhd:"Morningside Heights", built:1922, floors:6,  apts:34,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8076019, lon:-73.9586244},
+  {id:11, addr:"403 W 115th St",                        nbhd:"Morningside Heights", built:1912, floors:6,  apts:31,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Faculty Staff",                ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8058104, lon:-73.9602077},
+  {id:12, addr:"405 W 118th St",                        nbhd:"Morningside Heights", built:1922, floors:6,  apts:24,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8078011, lon:-73.9587795},
+  {id:13, addr:"411 W 115th St",                        nbhd:"Morningside Heights", built:1912, floors:6,  apts:25,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8058951, lon:-73.9604213},
+  {id:14, addr:"414 W 120th St",                        nbhd:"Morningside Heights", built:1926, floors:6,  apts:88,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs",                     ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8087462, lon:-73.9586156},
+  {id:15, addr:"415 W 115th St",                        nbhd:"Morningside Heights", built:1912, floors:6,  apts:25,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8059821, lon:-73.9606341},
+  {id:16, addr:"415 W 118th St",                        nbhd:"Morningside Heights", built:1922, floors:8,  apts:28,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8078661, lon:-73.9589467},
+  {id:17, addr:"415 W 120th St (Monarch Hts)",          nbhd:"Morningside Heights", built:2020, floors:14, apts:7,   ada:"Yes", ac:"Central AC", elevator:true,  door:"Part-time", bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Law Students",                          notes:"Gym; Community Room; Roof Deck; LEED certified", ll:"in-unit", gym:true, rd:true, cr:true, sh:false, rv:false, lat:40.8091740, lon:-73.9581460},
+  {id:18, addr:"417 W 118th St",                        nbhd:"Morningside Heights", built:1926, floors:6,  apts:21,  ada:"No",  ac:"Window",     elevator:false, door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"No elevator; laundry at 419", ll:"shared", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8079446, lon:-73.9590997},
+  {id:19, addr:"419 W 115th St",                        nbhd:"Morningside Heights", built:1912, floors:6,  apts:25,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8060708, lon:-73.9608445},
+  {id:20, addr:"419 W 118th St",                        nbhd:"Morningside Heights", built:1922, floors:6,  apts:24,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students Faculty Staff",                ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8080069, lon:-73.9592567},
+  {id:21, addr:"419 W 119th St",                        nbhd:"Morningside Heights", built:1956, floors:9,  apts:80,  ada:"No",  ac:"Window",     elevator:true,  door:"Full-time", bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8085067, lon:-73.9586004},
+  {id:22, addr:"420 W 116th St",                        nbhd:"Morningside Heights", built:1909, floors:10, apts:69,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"Law school-adjacent; Kings Crown", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8061596, lon:-73.9603113},
+  {id:23, addr:"420 W 119th St",                        nbhd:"Morningside Heights", built:1922, floors:6,  apts:55,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students Faculty Staff",                ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8082364, lon:-73.9590884},
+  {id:24, addr:"421 W 118th St",                        nbhd:"Morningside Heights", built:1922, floors:6,  apts:24,  ada:"No",  ac:"Window",     elevator:false, door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"No elevator", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8080608, lon:-73.9594284},
+  {id:25, addr:"423 W 118th St",                        nbhd:"Morningside Heights", built:1922, floors:6,  apts:40,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"7AM-10PM",  parking:false, playroom:false, eligible:"Students Postdocs",                     ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8080799, lon:-73.9597525},
+  {id:26, addr:"423 W 120th St",                        nbhd:"Morningside Heights", built:1920, floors:10, apts:77,  ada:"Yes", ac:"Window",     elevator:true,  door:"Full-time", bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8093566, lon:-73.9588730},
+  {id:27, addr:"424 W 119th St",                        nbhd:"Morningside Heights", built:1922, floors:6,  apts:47,  ada:"Yes", ac:"Window",     elevator:true,  door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8083886, lon:-73.9591703},
+  {id:28, addr:"434 W 120th St",                        nbhd:"Morningside Heights", built:1960, floors:10, apts:111, ada:"No",  ac:"Window",     elevator:true,  door:"Full-time", bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs",                     ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8089698, lon:-73.9590975},
+  {id:29, addr:"435 W 119th St",                        nbhd:"Morningside Heights", built:1960, floors:10, apts:117, ada:"No",  ac:"Window",     elevator:true,  door:"Full-time", bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Faculty Staff",                ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8086833, lon:-73.9592127},
+  {id:30, addr:"500 W 122nd St",                        nbhd:"Morningside Heights", built:1920, floors:6,  apts:53,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"7AM-10PM",  parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8106514, lon:-73.9586473},
+  {id:31, addr:"502 W 113th St",                        nbhd:"Morningside Heights", built:1910, floors:6,  apts:24,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"7AM-10PM",  parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8049209, lon:-73.9631026},
+  {id:32, addr:"502 W 122nd St",                        nbhd:"Morningside Heights", built:1920, floors:6,  apts:24,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"7AM-10PM",  parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8106838, lon:-73.9589557},
+  {id:33, addr:"506 W 113th St",                        nbhd:"Morningside Heights", built:1910, floors:6,  apts:23,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"7AM-10PM",  parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8049930, lon:-73.9632766},
+  {id:34, addr:"506 W 122nd St",                        nbhd:"Morningside Heights", built:1898, floors:6,  apts:29,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"7AM-10PM",  parking:false, playroom:false, eligible:"Students",                              notes:"Oldest building in portfolio", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8107426, lon:-73.9591172},
+  {id:35, addr:"507 W 113th St",                        nbhd:"Morningside Heights", built:1910, floors:7,  apts:33,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8053239, lon:-73.9628654},
+  {id:36, addr:"509 W 112th St",                        nbhd:"Morningside Heights", built:1910, floors:6,  apts:19,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"shared", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8046850, lon:-73.9637134},
+  {id:37, addr:"511 W 112th St",                        nbhd:"Morningside Heights", built:1910, floors:6,  apts:25,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8048546, lon:-73.9637938},
+  {id:38, addr:"511 W 113th St",                        nbhd:"Morningside Heights", built:1910, floors:7,  apts:43,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Faculty Staff",                ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8053752, lon:-73.9631987},
+  {id:39, addr:"514 W 114th St",                        nbhd:"Morningside Heights", built:1912, floors:8,  apts:49,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8056929, lon:-73.9629579},
+  {id:40, addr:"520 W 112th St",                        nbhd:"Morningside Heights", built:1987, floors:21, apts:41,  ada:"Yes", ac:"Central AC", elevator:true,  door:"Full-time", bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Law Students",                          notes:"Columbia Law School building", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8046288, lon:-73.9641509},
+  {id:41, addr:"520 W 114th St",                        nbhd:"Morningside Heights", built:1912, floors:8,  apts:35,  ada:"Yes", ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"8AM-9PM",   parking:false, playroom:false, eligible:"Students Faculty Staff",                ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8057864, lon:-73.9631994},
+  {id:42, addr:"520 W 122nd St",                        nbhd:"Morningside Heights", built:1910, floors:6,  apts:24,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8110556, lon:-73.9598633},
+  {id:43, addr:"521 W 111th St",                        nbhd:"Morningside Heights", built:1922, floors:6,  apts:41,  ada:"Yes", ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8043033, lon:-73.9645649},
+  {id:44, addr:"521 W 112th St",                        nbhd:"Morningside Heights", built:1912, floors:8,  apts:45,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8048479, lon:-73.9640985},
+  {id:45, addr:"522 W 112th St",                        nbhd:"Morningside Heights", built:1907, floors:6,  apts:24,  ada:"No",  ac:"Window",     elevator:false, door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"No elevator", ll:"shared", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8046791, lon:-73.9644696},
+  {id:46, addr:"523 W 112th St",                        nbhd:"Morningside Heights", built:1912, floors:8,  apts:48,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8050507, lon:-73.9642515},
+  {id:47, addr:"524 W 122nd St",                        nbhd:"Morningside Heights", built:1910, floors:6,  apts:23,  ada:"No",  ac:"Window",     elevator:false, door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"No elevator", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8111065, lon:-73.9600757},
+  {id:48, addr:"526 W 112th St",                        nbhd:"Morningside Heights", built:1910, floors:6,  apts:25,  ada:"No",  ac:"Window",     elevator:false, door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"No elevator", ll:"shared", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8047467, lon:-73.9646259},
+  {id:49, addr:"526 W 113th St",                        nbhd:"Morningside Heights", built:1912, floors:8,  apts:40,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"7AM-10PM",  parking:false, playroom:false, eligible:"Students Faculty Staff",                ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8051645, lon:-73.9637002},
+  {id:50, addr:"526 W 122nd St",                        nbhd:"Morningside Heights", built:1910, floors:6,  apts:24,  ada:"No",  ac:"Window",     elevator:false, door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"No elevator", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8111607, lon:-73.9602066},
+  {id:51, addr:"528 Riverside Dr",                      nbhd:"Morningside Heights", built:1926, floors:6,  apts:33,  ada:"Yes", ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"Riverside Park views", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:true,  lat:40.8144809, lon:-73.9613587},
+  {id:52, addr:"529 W 111th St",                        nbhd:"Morningside Heights", built:1922, floors:6,  apts:36,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students Faculty Staff",                ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8044336, lon:-73.9648863},
+  {id:53, addr:"530 W 112th St",                        nbhd:"Morningside Heights", built:1910, floors:6,  apts:24,  ada:"No",  ac:"Window",     elevator:false, door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"No elevator", ll:"shared", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8048102, lon:-73.9647897},
+  {id:54, addr:"530 W 113th St",                        nbhd:"Morningside Heights", built:1912, floors:8,  apts:24,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"7AM-10PM",  parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8052628, lon:-73.9638112},
+  {id:55, addr:"530 W 122nd St",                        nbhd:"Morningside Heights", built:1910, floors:6,  apts:23,  ada:"No",  ac:"Window",     elevator:false, door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"No elevator", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8112166, lon:-73.9603397},
+  {id:56, addr:"531 W 112th St",                        nbhd:"Morningside Heights", built:1912, floors:8,  apts:41,  ada:"Yes", ac:"Window",     elevator:true,  door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8051576, lon:-73.9644277},
+  {id:57, addr:"535 W 111th St",                        nbhd:"Morningside Heights", built:1922, floors:6,  apts:30,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8045482, lon:-73.9651344},
+  {id:58, addr:"535 W 113th St",                        nbhd:"Morningside Heights", built:1912, floors:8,  apts:33,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"8AM-9PM",   parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8057290, lon:-73.9638106},
+  {id:59, addr:"536 W 113th St",                        nbhd:"Morningside Heights", built:1912, floors:8,  apts:47,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"7AM-10PM",  parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8053192, lon:-73.9640502},
+  {id:60, addr:"539 W 112th St",                        nbhd:"Morningside Heights", built:1912, floors:6,  apts:42,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8053200, lon:-73.9650511},
+  {id:61, addr:"540 W 112th St",                        nbhd:"Morningside Heights", built:1910, floors:6,  apts:25,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8050848, lon:-73.9651174},
+  {id:62, addr:"540 W 122nd St",                        nbhd:"Morningside Heights", built:1910, floors:6,  apts:37,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8115623, lon:-73.9607713},
+  {id:63, addr:"541 W 113th St",                        nbhd:"Morningside Heights", built:1912, floors:6,  apts:34,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8057902, lon:-73.9642040},
+  {id:64, addr:"542 W 112th St",                        nbhd:"Morningside Heights", built:1920, floors:10, apts:138, ada:"No",  ac:"Central AC", elevator:true,  door:"Part-time", bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"Central AC; Laundry hub for cluster", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8051924, lon:-73.9654120},
+  {id:65, addr:"547 Riverside Dr",                      nbhd:"Morningside Heights", built:1926, floors:6,  apts:36,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"Riverside Park views", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:true,  lat:40.8150038, lon:-73.9609693},
+  {id:66, addr:"548 Riverside Dr",                      nbhd:"Morningside Heights", built:1926, floors:6,  apts:24,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"Riverside Park views", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:true,  lat:40.8152468, lon:-73.9607924},
+  {id:67, addr:"554 W 113th St",                        nbhd:"Morningside Heights", built:1910, floors:4,  apts:8,   ada:"No",  ac:"Window",     elevator:false, door:"None",      bike:false, laundry:"7AM-10PM",  parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       notes:"No elevator; laundry at 541 W 113th", ll:"shared", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8055839, lon:-73.9645781},
+  {id:68, addr:"560 Riverside Dr",                      nbhd:"Morningside Heights", built:1940, floors:20, apts:320, ada:"Yes", ac:"Central AC", elevator:true,  door:"Full-time", bike:true,  laundry:"24/7",      parking:true,  playroom:true,  eligible:"Students Postdocs Faculty Staff",       notes:"BBQ; Playground; Community Room; Parking", ll:"in-bldg", gym:false, rd:false, cr:true,  sh:false, rv:false, lat:40.8169598, lon:-73.9603963},
+  {id:69, addr:"560 W 113th St",                        nbhd:"Morningside Heights", built:1910, floors:4,  apts:5,   ada:"No",  ac:"Window",     elevator:false, door:"None",      bike:false, laundry:"7AM-10PM",  parking:false, playroom:false, eligible:"Students",                              notes:"No elevator; very small building", ll:"shared", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8056514, lon:-73.9647565},
+  {id:70, addr:"600 W 114th St",                        nbhd:"Morningside Heights", built:1910, floors:5,  apts:9,   ada:"No",  ac:"Window",     elevator:false, door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Faculty Staff",                notes:"No elevator; laundry at 601 W 113th", ll:"shared", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8067728, lon:-73.9653043},
+  {id:71, addr:"601 W 112th St",                        nbhd:"Morningside Heights", built:1905, floors:7,  apts:39,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Faculty Staff",                ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8056975, lon:-73.9660857},
+  {id:72, addr:"601 W 113th St",                        nbhd:"Morningside Heights", built:1909, floors:12, apts:113, ada:"Yes", ac:"Window",     elevator:true,  door:"Full-time", bike:false, laundry:"Not listed",parking:false, playroom:true,  eligible:"Students Postdocs Faculty Staff",       notes:"Playroom; Lobby photos available", ll:"in-bldg", gym:false, rd:false, cr:true,  sh:false, rv:false, lat:40.8063319, lon:-73.9655939},
+  {id:73, addr:"604 W 115th St",                        nbhd:"Morningside Heights", built:1910, floors:7,  apts:28,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8073974, lon:-73.9650707},
+  {id:74, addr:"608 W 114th St",                        nbhd:"Morningside Heights", built:1910, floors:4,  apts:7,   ada:"No",  ac:"Window",     elevator:false, door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"No elevator; laundry at 610 W 114th", ll:"shared", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8068866, lon:-73.9656961},
+  {id:75, addr:"610 W 113th St",                        nbhd:"Morningside Heights", built:1910, floors:6,  apts:18,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Faculty Staff",                ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8062248, lon:-73.9663194},
+  {id:76, addr:"610 W 115th St",                        nbhd:"Morningside Heights", built:1912, floors:8,  apts:35,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8074937, lon:-73.9654135},
+  {id:77, addr:"610 W 116th St",                        nbhd:"Morningside Heights", built:1907, floors:10, apts:42,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8081645, lon:-73.9649228},
+  {id:78, addr:"614 W 113th St",                        nbhd:"Morningside Heights", built:1910, floors:4,  apts:9,   ada:"No",  ac:"Window",     elevator:false, door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              notes:"No elevator; smallest building", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8062998, lon:-73.9663888},
+  {id:79, addr:"617 W 115th St",                        nbhd:"Morningside Heights", built:1910, floors:6,  apts:12,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8080033, lon:-73.9654289},
+  {id:80, addr:"629 W 115th St",                        nbhd:"Morningside Heights", built:1912, floors:8,  apts:33,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students Postdocs Faculty Staff",       ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8080614, lon:-73.9656339},
+  {id:81, addr:"61-63 W 108th St",                      nbhd:"Manhattan Valley",    built:1900, floors:5,  apts:20,  ada:"No",  ac:"Window",     elevator:false, door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"GS Students",                           notes:"Walk-up (no elevator)", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8003409, lon:-73.9608864},
+  {id:82, addr:"74 W 108th St",                         nbhd:"Manhattan Valley",    built:1910, floors:6,  apts:24,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"Students",                              ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.8003362, lon:-73.9616652},
+  {id:83, addr:"950 Columbus Ave",                      nbhd:"Manhattan Valley",    built:1910, floors:5,  apts:14,  ada:"No",  ac:"Window",     elevator:true,  door:"None",      bike:false, laundry:"24/7",      parking:false, playroom:false, eligible:"GS Students",                           notes:"GS students + studio apts", ll:"in-bldg", gym:false, rd:false, cr:false, sh:false, rv:false, lat:40.7998098, lon:-73.9627986},
+  {id:84, addr:"600 W 125th St",                        nbhd:"Manhattanville",      built:2024, floors:34, apts:142, ada:"Yes", ac:"Central AC", elevator:true,  door:"Full-time", bike:true,  laundry:"24/7",      parking:false, playroom:false, eligible:"Graduate Students Faculty",              notes:"Renzo Piano design; Gym; Game Room; Terrace; LEED Gold; Free WiFi; 33F library", ll:"in-bldg", gym:true,  rd:false, cr:true,  sh:false, rv:false, lat:40.8157058, lon:-73.9587763},
+  {id:85, addr:"3260 Henry Hudson Pkwy (The Arbor)",    nbhd:"Riverdale, Bronx",    built:2006, floors:9,  apts:127, ada:"Yes", ac:"Central AC", elevator:true,  door:"Full-time", bike:true,  laundry:"24/7",      parking:true,  playroom:false, eligible:"Students Postdocs Faculty Staff",       notes:"In-unit W/D; Gym; Roof Deck; Shuttle to campus; Community Room", ll:"in-unit", gym:true,  rd:true,  cr:true,  sh:true,  rv:false, lat:40.8778251, lon:-73.9221151}
+];
+
+// ══════════════════════════════════════════════════════
+//  Neighborhood colors
+// ══════════════════════════════════════════════════════
+const NBHD_COLOR = {
+  "Morningside Heights": "#003087",
+  "Manhattan Valley":    "#e07b00",
+  "Manhattanville":      "#00796b",
+  "Riverdale, Bronx":    "#7b1fa2"
+};
+
+// ══════════════════════════════════════════════════════
+//  Map init
+// ══════════════════════════════════════════════════════
+const map = L.map('map', { zoomControl: true }).setView([40.808, -73.962], 15);
+
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://carto.com/">CartoDB</a> &copy; <a href="https://openstreetmap.org">OpenStreetMap</a>',
+  subdomains: 'abcd',
+  maxZoom: 19
+}).addTo(map);
+
+// ── Campus polygons (always visible, not affected by filters) ──
+// Tilted to match the Manhattan street grid (~29-30° from geographic north)
+// derived from actual OSM street node data.
+
+// CU Morningside Heights: W114th–W120th, Broadway (W) → Amsterdam Ave (E)
+// NW=Broadway&W120th, NE=Amsterdam&W120th, SE=Amsterdam&W114th, SW=Broadway&W114th
+L.polygon(
+  [[40.810408,-73.961932],[40.809313,-73.959403],[40.805620,-73.962089],[40.806697,-73.964653]],
+  { color:'#003087', weight:2.5, opacity:0.5, fillColor:'#003087', fillOpacity:0.07, dashArray:'6,4' }
+).addTo(map);
+
+// CBS Manhattanville: W130th–W131st, Riverside Dr → Broadway
+// W130th OSM endpoints: (40.8182,-73.9603) west  →  (40.8169,-73.9574) east
+// 1 block north along avenue: dlat=+0.000626, dlon=+0.000473
+L.polygon(
+  [[40.8188,-73.9598],[40.8176,-73.9569],[40.8169,-73.9572],[40.8181,-73.9601]],
+  { color:'#00796b', weight:2.5, opacity:0.5, fillColor:'#00796b', fillOpacity:0.07, dashArray:'6,4' }
+).addTo(map);
+
+// ── Campus logo markers (embedded from provided images) ──
+const CU_DATA  = "data:image/jpeg;base64,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JBkrSW6RSWstaU6jW5wx7gCUxRsQbNhyoETnK93obSfddY/VNw16j57rHRE4LT8rguHzOC2R0aLnmr0i7rbHwhbbofvL6JjlY4BUMLYqdUlgWOXbCd3Rec7MUPBaU/8ATwXFP/ZvG3vIidqc90d0ibbfHxi7Zh8APpLUfsJtmR0kCVFRdlpf1j+BNZ2St9nb/LgureknfbGd0rwLw/8AWwbHEeASAFtuJ8Y/pEXosYuOHbdI221lwz+Bdk6SN9qZ2xuC8M/jvs6eDOLjSdltjYbNs8+CD01rN2F2qnVJsdY5NjJJmUlwkpSXM9aoWtVfTbovVj2kbsNcRjfqra1QdaoGtTDU2Qkkm8DMMPBOHiRd8GWkatTDWqCrVGVqrajzxnJsMVoR6q6tUfWqFpbmelnyVp5yk226NjP3TzYx/TIvRYxcYO04WmEUbhE4bUbo/ZJTpI44AsSTxSB4RuO3J1mbLkbFPwxgOOUbGjZtnmwY/qLSbo/dOjJIYqKi8AnYZNl0F2SOO1B7A8V3FyWgX8vyV3YPhGxxHxY7Y491zNiSPUDeoyMcj27rhDxU4QL1B+ZoMcH9cUYSnMiI1OIo0IMjFG/hY1XujiQIvzcF6Q+BEVywYqR27pBMEKr19Vai94N8+F38MT42y5xei8Nvj4AuS5xu9vDbYvYmy5/D3oiuWDDQCb7uX9eqthOyTwTYKGpzVau4Tewez+6nQlEu+2xOvPcImC7fAhdd01mJF3DG4r4cNsdOCaTFk+qY7tc1Uc3gkRhyEkQih222Krnb5Vu605rmL+f7qHb/AAFRFSZAVm0Y3ldEt7R8E+IoX7I8AhaCAYG8Eh+ED1luf3xOIsQBadax1pSUKAAfEQTCoS2CWltTqZaqBFEDwzwwmp1qWktTqHbQtpjGsTgX90W3AeulJTbYJKFGCLjuz+gPWWd36+lXd3U3rLU7pJ+lXB3dL9ZAXpL+lHXuN6yL8n7vH+R93RVRc0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0es0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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACCIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAASQgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAoAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATiRAADiDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGGKAAIGgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQiCACISgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACACKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAAKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwAAAACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVgAAAAQpAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAVAAAAAApAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAXAAAAAAJAAAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAACKBjDjzSuBAAAAAAAARIAAAAGrAAAAAAAEFEQjzxTDsIAAAAAAAAAAAAAAAOxAAAAAAAAADSBEAAAAAgAAAESCAAAAKdiRAAAAAAAAAzICAAAAAAAAAAAARjAABMqBENIAAAAwEvMAAfiAAClAAILwwAAAANBcBE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KFzh61Js3az4WgAqi+E81+qAAcU8bjh6OWEFt9bcGp1c7kD81OsLbPylNDsw6IW9aGE9oQtz1I8HQEiN4lCFgBSd643U3YjKFHxWYIeVrTJg4kd1pV+qlFFqM7T5fbUrm42+R1oMXattv9lwjDXR2zwJH69tJmd0G0T6P8XaRIXIfI9tiFiVyk+/4u0CYTcp9t2NH0/xU3zcVPt8ntsrC1fj/wAUZLM9uUO4QhEuTbXknevJO9eSd68k715J3ryTvXknevJO9eSd68k715J3ryTvXknevJO9eSd68k715J3ryTvXknevJO9eSd68k715J3ryTvXknevJO9eSd68k715J3ryTvXknevJO9eSd68k715J3ryTvXknevJO9eSd68k715J3ryTvXknevJO9eSd68k715J3ryTvXknevJO9eSd68k715J3ryTvXknevJO9eSd68k715J3ryTvXknevJO9eSd68k715J3ryTvXknevJO9eSd68k715J3ryTvXknevJO/8A4DkMVRU22V4J2rwTtXgnavBO1eCdq8E7V4J2rwTtXgnavBO1eCdq8E7V4J2rwTtXgnavBO1eCdq8E7V4J2rwTtXgnavBO1eCdq8E7V4J2rwTtXgnavBO1eCdq8E7V4J2rwTtXgnavBO1eCdq8E7V4J2rwTtXgnavBO1eCdq8E7V4J2rwTtXgnavBO1eCdq8E7V4J2rwTtXgnavBO1eCdq8E7V4J2rwTtXgnavBO1eCdq8E7V4J2rwTtXgnavBO1eCdq8E7V4J2rwTtXgnavBO1eCdq8E7V4J2rwTtTaCQRGLx9t/Iy/i/wBfL238jL+L/Xy9t/Iy/i/18vbfyMv4v9fL238jL+L/AF8vbcID2kfxdVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVtISob57cioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKioqKio/wDi8f/Z";
+const CBS_DATA = "data:image/png;base64,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";
+
+function makeCampusIcon(dataUri, size) {
+  return L.divIcon({
+    className: '',
+    html: `<div style="width:${size}px;height:${size}px;border-radius:50%;box-shadow:0 3px 14px rgba(0,0,0,0.38);overflow:hidden;">
+             <img src="${dataUri}" style="width:100%;height:100%;object-fit:cover;" />
+           </div>`,
+    iconAnchor: [size/2, size/2],
+    iconSize: [size, size]
+  });
+}
+
+L.marker([40.8080, -73.9620], { icon: makeCampusIcon(CU_DATA,  58), zIndexOffset: 1500, interactive: false }).addTo(map);
+L.marker([40.8179, -73.9586], { icon: makeCampusIcon(CBS_DATA, 58), zIndexOffset: 1500, interactive: false }).addTo(map);
+
+// ══════════════════════════════════════════════════════
+//  Building markers
+// ══════════════════════════════════════════════════════
+function markerSize(apts) {
+  return Math.max(7, Math.min(17, 6 + Math.sqrt(apts) * 0.55));
+}
+
+function makePopup(b) {
+  const eligWords = b.eligible.trim().split(/\s+/);
+  const eligList = eligWords.map(e => `<span class="popup-elig-tag">${e}</span>`).join('');
+
+  const tags = [];
+  if (b.elevator) tags.push(`<span class="popup-tag">🛗 Elevator</span>`);
+  if (b.ada === 'Yes') tags.push(`<span class="popup-tag">♿ ADA</span>`);
+  if (b.bike) tags.push(`<span class="popup-tag green">🚲 Bike</span>`);
+  if (b.parking) tags.push(`<span class="popup-tag green">🅿️ Parking</span>`);
+  if (b.gym) tags.push(`<span class="popup-tag amber">🏋 Gym</span>`);
+  if (b.rd) tags.push(`<span class="popup-tag amber">🏙 Roof Deck</span>`);
+  if (b.cr) tags.push(`<span class="popup-tag amber">🛋 Common Room</span>`);
+  if (b.sh) tags.push(`<span class="popup-tag amber">🚌 Shuttle</span>`);
+  if (b.rv) tags.push(`<span class="popup-tag amber">🌿 Riverside Views</span>`);
+
+  const llLabel = b.ll === 'in-unit' ? 'In Unit' : b.ll === 'in-bldg' ? 'In Building' : 'Shared / Off-site';
+  const doorLabel = b.door === 'None' ? '—' : b.door;
+
+  return `
+    <div class="popup-header">
+      <div class="popup-num">Building #${b.id}</div>
+      <div class="popup-addr">${b.addr}</div>
+      <div class="popup-meta">${b.nbhd} · Built ${b.built}</div>
+    </div>
+    <div class="popup-body">
+      <div class="popup-grid">
+        <div class="popup-stat"><span class="popup-stat-label">Floors</span><span class="popup-stat-val">${b.floors}</span></div>
+        <div class="popup-stat"><span class="popup-stat-label">Apartments</span><span class="popup-stat-val">${b.apts}</span></div>
+        <div class="popup-stat"><span class="popup-stat-label">A/C</span><span class="popup-stat-val">${b.ac}</span></div>
+        <div class="popup-stat"><span class="popup-stat-label">Laundry Hours</span><span class="popup-stat-val">${b.laundry}</span></div>
+        <div class="popup-stat"><span class="popup-stat-label">Laundry</span><span class="popup-stat-val">${llLabel}</span></div>
+        <div class="popup-stat"><span class="popup-stat-label">Door</span><span class="popup-stat-val">${doorLabel}</span></div>
+      </div>
+      ${tags.length ? `<div class="popup-tags">${tags.join('')}</div>` : ''}
+      <div class="popup-eligible">${eligList}</div>
+      ${b.notes ? `<div class="popup-notes">${b.notes}</div>` : ''}
+    </div>`;
+}
+
+const markers = BUILDINGS.map(b => {
+  const sz = markerSize(b.apts);
+  const color = NBHD_COLOR[b.nbhd] || '#555';
+  const icon = L.divIcon({
+    className: '',
+    html: `<div style="width:${sz*2}px;height:${sz*2}px;border-radius:50%;background:${color};border:2.5px solid rgba(255,255,255,0.9);box-shadow:0 1px 6px rgba(0,0,0,0.28);cursor:pointer;"></div>`,
+    iconSize: [sz*2, sz*2],
+    iconAnchor: [sz, sz]
+  });
+  const marker = L.marker([b.lat, b.lon], { icon, zIndexOffset: 100 });
+  marker.bindPopup(makePopup(b), { maxWidth: 300 });
+  marker._bdata = b;
+  return marker;
+});
+
+markers.forEach(m => m.addTo(map));
+
+// ══════════════════════════════════════════════════════
+//  Dual range slider sync
+// ══════════════════════════════════════════════════════
+function syncDual(name) {
+  const lo = document.getElementById(name + 'Lo');
+  const hi = document.getElementById(name + 'Hi');
+  if (+lo.value > +hi.value) lo.value = hi.value;
+  lo.style.zIndex = (+lo.value >= +hi.value) ? '3' : '2';
+  const mn = +lo.min, mx = +lo.max, lv = +lo.value, hv = +hi.value;
+  const pLo = (lv - mn) / (mx - mn) * 100;
+  const pHi = (hv - mn) / (mx - mn) * 100;
+  document.getElementById(name + 'Fill').style.cssText = `left:${pLo}%;width:${pHi - pLo}%`;
+  document.getElementById(name + 'LoV').textContent = lv;
+  document.getElementById(name + 'HiV').textContent = hv;
+  applyFilters();
+}
+
+// ══════════════════════════════════════════════════════
+//  Filter engine
+// ══════════════════════════════════════════════════════
+function getChecked(cls) {
+  return [...document.querySelectorAll('.' + cls + ':checked')].map(el => el.value);
+}
+function getActiveChips(groupId) {
+  return [...document.querySelectorAll('#' + groupId + ' .chip.on')].map(el => el.dataset.key);
+}
+function getActivePills(groupId) {
+  return [...document.querySelectorAll('#' + groupId + ' .pill.on')].map(el => el.dataset.val);
+}
+
+function applyFilters() {
+  const nbhds       = getChecked('cb-nbhd');
+  const eligPills   = getActivePills('eligFilter');
+  const builtLo     = +document.getElementById('builtLo').value;
+  const builtHi     = +document.getElementById('builtHi').value;
+  const floorsLo    = +document.getElementById('floorsLo').value;
+  const floorsHi    = +document.getElementById('floorsHi').value;
+  const acTypes     = getChecked('cb-ac');
+  const mustChips   = getActiveChips('mustFilter');
+  const featChips   = getActiveChips('featFilter');
+  const doors       = getChecked('cb-door');
+  const laundryHrs  = getChecked('cb-laundry');
+  const laundryLocs = getChecked('cb-ll');
+
+  let count = 0;
+
+  markers.forEach(m => {
+    const b = m._bdata;
+    let show = true;
+
+    // Neighborhood (OR)
+    if (!nbhds.includes(b.nbhd)) show = false;
+
+    // Eligible residents (OR — building must include at least one active pill)
+    if (show && eligPills.length > 0) {
+      const bElig = b.eligible;
+      const match = eligPills.some(p => bElig.includes(p));
+      if (!match) show = false;
+    }
+
+    // Year built
+    if (show && (b.built < builtLo || b.built > builtHi)) show = false;
+
+    // Floors
+    if (show && (b.floors < floorsLo || b.floors > floorsHi)) show = false;
+
+    // A/C type (OR)
+    if (show && !acTypes.includes(b.ac)) show = false;
+
+    // Must-have chips (AND — all active must be true)
+    if (show) {
+      for (const key of mustChips) {
+        if (key === 'elevator' && !b.elevator) { show = false; break; }
+        if (key === 'ada'      && b.ada !== 'Yes') { show = false; break; }
+        if (key === 'bike'     && !b.bike) { show = false; break; }
+        if (key === 'parking'  && !b.parking) { show = false; break; }
+      }
+    }
+
+    // Special features chips (AND — all active must be true)
+    if (show) {
+      for (const key of featChips) {
+        if (!b[key]) { show = false; break; }
+      }
+    }
+
+    // Door attendant (OR)
+    if (show) {
+      const bDoor = b.door || 'None';
+      if (!doors.includes(bDoor)) show = false;
+    }
+
+    // Laundry hours (OR)
+    if (show && laundryHrs.length > 0) {
+      const lh = b.laundry || 'Not listed';
+      const knownHours = ['24/7','7AM-10PM','8AM-10PM','8AM-9PM'];
+      let matched = laundryHrs.includes(lh);
+      if (!matched && !knownHours.includes(lh)) {
+        matched = laundryHrs.includes('Not listed');
+      }
+      if (!matched) show = false;
+    }
+
+    // Laundry location (OR)
+    if (show && !laundryLocs.includes(b.ll)) show = false;
+
+    if (show) {
+      map.addLayer(m);
+      count++;
+    } else {
+      map.removeLayer(m);
+    }
+  });
+
+  document.getElementById('resultCount').textContent = `Showing ${count} of 85`;
+}
+
+// ══════════════════════════════════════════════════════
+//  Reset
+// ══════════════════════════════════════════════════════
+function resetAll() {
+  document.querySelectorAll('input[type="checkbox"]').forEach(el => el.checked = true);
+  document.querySelectorAll('.pill').forEach(el => el.classList.add('on'));
+  document.querySelectorAll('.chip').forEach(el => el.classList.remove('on'));
+
+  document.getElementById('builtLo').value = 1898;
+  document.getElementById('builtHi').value = 2024;
+  document.getElementById('floorsLo').value = 1;
+  document.getElementById('floorsHi').value = 34;
+
+  syncDual('built');
+  syncDual('floors');
+}
+
+// ══════════════════════════════════════════════════════
+//  Event binding
+// ══════════════════════════════════════════════════════
+document.querySelectorAll('.pill').forEach(el => {
+  el.addEventListener('click', () => { el.classList.toggle('on'); applyFilters(); });
+});
+
+document.querySelectorAll('.chip').forEach(el => {
+  el.addEventListener('click', () => { el.classList.toggle('on'); applyFilters(); });
+});
+
+document.querySelectorAll('input[type="checkbox"]').forEach(el => {
+  el.addEventListener('change', applyFilters);
+});
+
+['built', 'floors'].forEach(name => {
+  document.getElementById(name + 'Lo').addEventListener('input', () => syncDual(name));
+  document.getElementById(name + 'Hi').addEventListener('input', () => syncDual(name));
+});
+
+document.getElementById('btnReset').addEventListener('click', resetAll);
+
+// Init
+syncDual('built');
+syncDual('floors');
+
+// ── Header logo: use CBS logo ──
+document.getElementById('headerLogo').src = CBS_DATA;
+
+// ── Sidebar collapse ──
+(function() {
+  const sidebar = document.querySelector('.sidebar');
+  const btn     = document.getElementById('sidebarToggle');
+  btn.addEventListener('click', function() {
+    const collapsed = sidebar.classList.toggle('collapsed');
+    btn.innerHTML   = collapsed ? '&#x276F;' : '&#x276E;';
+    btn.title       = collapsed ? 'Show filters' : 'Hide filters';
+    // Invalidate map size after transition
+    setTimeout(function(){ map.invalidateSize(); }, 270);
+  });
+})();
+</script>
+</body>
+</html>
