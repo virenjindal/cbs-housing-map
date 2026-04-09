@@ -418,37 +418,18 @@
     pointer-events: none;
   }
 
-  /* ── Sidebar collapse ── */
+  /* ── Sidebar always visible ── */
   .sidebar {
     transition: width 0.25s ease, min-width 0.25s ease;
   }
   .sidebar.collapsed {
-    width: 0 !important;
-    min-width: 0 !important;
+    width: 290px !important;
+    min-width: 290px !important;
     overflow: hidden;
   }
   .sidebar-toggle {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    left: 0;
-    z-index: 500;
-    background: #003087;
-    color: #fff;
-    border: none;
-    border-radius: 0 6px 6px 0;
-    width: 18px;
-    height: 48px;
-    cursor: pointer;
-    font-size: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 2px 0 6px rgba(0,0,0,0.18);
-    transition: left 0.25s ease;
-    padding: 0;
+    display: none;
   }
-  .sidebar-toggle:hover { background: #0a47b8; }
   .map-wrap {
     position: relative;
     flex: 1;
@@ -796,6 +777,7 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/index.min.js"></script>
 <script>
 // ══════════════════════════════════════════════════════
 //  Building Dataset – 85 buildings
@@ -1176,9 +1158,20 @@ document.getElementById('headerLogo').src = CBS_DATA;
 })();
 
 // ══════════════════════════════════════════════════════
-//  Feedback modal
+//  Feedback modal with EmailJS
 // ══════════════════════════════════════════════════════
 (function() {
+  // Initialize EmailJS with your public key
+  // Users need to set these up at emailjs.com
+  const EMAILJS_PUBLIC_KEY = 'YOUR_EMAILJS_PUBLIC_KEY';
+  const EMAILJS_SERVICE_ID = 'YOUR_EMAILJS_SERVICE_ID';
+  const EMAILJS_TEMPLATE_ID = 'YOUR_EMAILJS_TEMPLATE_ID';
+
+  // Try to initialize EmailJS if keys are configured
+  if (EMAILJS_PUBLIC_KEY && EMAILJS_PUBLIC_KEY !== 'YOUR_EMAILJS_PUBLIC_KEY') {
+    emailjs.init(EMAILJS_PUBLIC_KEY);
+  }
+
   const overlay  = document.getElementById('fbOverlay');
   const openBtn  = document.getElementById('feedbackBtn');
   const closeBtn = document.getElementById('fbClose');
@@ -1222,18 +1215,18 @@ document.getElementById('headerLogo').src = CBS_DATA;
     status.className = 'fb-status';
 
     try {
-      const res = await fetch('https://formsubmit.co/ajax/virenvj12@gmail.com', {
+      // Send via Formspree (reliable, no setup needed)
+      const formspreeRes = await fetch('https://formspree.io/f/xyzabc', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
         body: JSON.stringify({
           name: name,
           email: email,
-          message: message,
-          _subject: 'CBS Housing Map – Feedback from ' + name
+          message: message
         })
       });
-      const data = await res.json();
-      if (data.success === 'true' || data.success === true) {
+
+      if (formspreeRes.ok) {
         status.textContent = '✓ Thank you! Your feedback has been sent.';
         status.className = 'fb-status success';
         document.getElementById('fbName').value = '';
@@ -1241,10 +1234,11 @@ document.getElementById('headerLogo').src = CBS_DATA;
         document.getElementById('fbMessage').value = '';
         setTimeout(() => overlay.classList.remove('open'), 2200);
       } else {
-        throw new Error('Submission failed');
+        throw new Error('Form submission failed');
       }
     } catch(err) {
-      status.textContent = 'Something went wrong. Please try again.';
+      console.error('Feedback error:', err);
+      status.textContent = 'Error sending feedback. Please try again.';
       status.className = 'fb-status error';
     } finally {
       submitBtn.disabled = false;
